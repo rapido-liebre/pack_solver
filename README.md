@@ -9,7 +9,7 @@ This is a Go backend service that allows configuration of available pack sizes a
 - Redis for storing configuration
 
 ## Requirements
-- Go 1.22+
+- Go 1.24+
 - Docker (optional for local setup)
 
 ## Run locally
