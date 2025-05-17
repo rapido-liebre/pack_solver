@@ -2,6 +2,7 @@
 package http
 
 import (
+	"github.com/rapido-liebre/pack_solver/internal/packsolver"
 	"net/http"
 	"sort"
 
@@ -18,12 +19,23 @@ type PackConfigResponse struct {
 	PackSizes []int `json:"pack_sizes"`
 }
 
+type OrderRequest struct {
+	Quantity int `json:"quantity" binding:"required"`
+}
+
+type OrderResponse struct {
+	Packs      []packsolver.Pack `json:"packs"`
+	TotalItems int               `json:"total_items"`
+}
+
 // RegisterRoutes registers HTTP routes for managing pack size configuration:
 // - GET /config/packs: returns the current pack size configuration
 // - POST /config/packs: updates the pack size configuration after validation
+// - POST /order: returns the optimal pack distribution for the requested quantity
 func RegisterRoutes(r *gin.Engine) {
 	r.GET("/config/packs", getPackSizes)
 	r.POST("/config/packs", setPackSizes)
+	r.POST("/order", createOrder)
 }
 
 // getPackSizes returns the current pack size configuration fetched from Redis.
@@ -75,4 +87,25 @@ func setPackSizes(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, PackConfigResponse{Success: true, PackSizes: clean})
+}
+
+// createOrder processes a request for an order and returns the optimal pack distribution.
+func createOrder(c *gin.Context) {
+	var req OrderRequest
+	if err := c.ShouldBindJSON(&req); err != nil || req.Quantity <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid or missing quantity"})
+		return
+	}
+
+	sizes, err := config.GetPackSizes()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch pack sizes"})
+		return
+	}
+
+	packs, total := packsolver.SolvePackDistribution(req.Quantity, sizes)
+	c.JSON(http.StatusOK, OrderResponse{
+		Packs:      packs,
+		TotalItems: total,
+	})
 }

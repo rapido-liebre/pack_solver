@@ -1,4 +1,4 @@
-// Package config internal/config/config.go
+// Package config initializes Redis, get and save packs configuration
 package config
 
 import (
