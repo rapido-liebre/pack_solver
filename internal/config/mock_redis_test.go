@@ -19,7 +19,7 @@ func TestGetPackSizesWithMockRedis(t *testing.T) {
 	err = os.Setenv("REDIS_ADDR", s.Addr())
 	assert.NoError(t, err)
 
-	err = config.InitRedis(os.Getenv("REDIS_ADDR"))
+	err = config.InitRedis()
 	assert.NoError(t, err)
 
 	value, _ := json.Marshal([]int{100, 250, 500})
@@ -39,7 +39,7 @@ func TestSetPackSizesWithMockRedis(t *testing.T) {
 	err = os.Setenv("REDIS_ADDR", s.Addr())
 	assert.NoError(t, err)
 
-	err = config.InitRedis(os.Getenv("REDIS_ADDR"))
+	err = config.InitRedis()
 	assert.NoError(t, err)
 
 	sizes := []int{300, 600, 900}

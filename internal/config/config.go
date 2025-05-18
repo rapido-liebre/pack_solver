@@ -4,7 +4,9 @@ package config
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/redis/go-redis/v9"
+	"os"
 )
 
 var redisClient *redis.Client
@@ -12,13 +14,26 @@ var ctx = context.Background()
 
 const PackSizesKey = "pack:sizes"
 
-// InitRedis initializes the Redis client with the given address.
-func InitRedis(addr string) error {
-	redisClient = redis.NewClient(&redis.Options{
-		Addr: addr,
-	})
-	_, err := redisClient.Ping(ctx).Result()
-	return err
+// InitRedis initializes Redis connection using REDIS_ADDR from environment.
+// It expects REDIS_ADDR in URI format (e.g., redis://user:pass@host:6379).
+func InitRedis() error {
+	url := os.Getenv("REDIS_ADDR")
+	if url == "" {
+		return fmt.Errorf("REDIS_ADDR is not set")
+	}
+
+	opt, err := redis.ParseURL(url)
+	if err != nil {
+		return fmt.Errorf("invalid REDIS_ADDR format: %w", err)
+	}
+
+	redisClient = redis.NewClient(opt)
+
+	if err := redisClient.Ping(context.Background()).Err(); err != nil {
+		return fmt.Errorf("failed to connect to Redis: %w", err)
+	}
+
+	return nil
 }
 
 // GetPackSizes retrieves the pack sizes from Redis.

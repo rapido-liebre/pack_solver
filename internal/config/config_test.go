@@ -11,7 +11,7 @@ func TestSetAndGetPackSizes(t *testing.T) {
 	err := os.Setenv("REDIS_ADDR", "localhost:6379")
 	assert.NoError(t, err)
 
-	err = config.InitRedis(os.Getenv("REDIS_ADDR"))
+	err = config.InitRedis()
 	assert.NoError(t, err)
 
 	sizes := []int{100, 200, 300}
@@ -27,7 +27,7 @@ func TestSetPackSizesInvalidRedis(t *testing.T) {
 	err := os.Setenv("REDIS_ADDR", "localhost:6380")
 	assert.NoError(t, err)
 
-	err = config.InitRedis(os.Getenv("REDIS_ADDR"))
+	err = config.InitRedis()
 	assert.Error(t, err)
 
 	// simulate unavailable redis
@@ -40,7 +40,7 @@ func TestGetPackSizesEmpty(t *testing.T) {
 	err := os.Setenv("REDIS_ADDR", "localhost:6379")
 	assert.NoError(t, err)
 
-	err = config.InitRedis(os.Getenv("REDIS_ADDR"))
+	err = config.InitRedis()
 	assert.NoError(t, err)
 
 	_, err = config.GetPackSizes()

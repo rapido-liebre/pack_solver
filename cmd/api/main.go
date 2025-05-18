@@ -3,7 +3,6 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rapido-liebre/pack_solver/internal/config"
@@ -11,11 +10,7 @@ import (
 )
 
 func main() {
-	envRedis := os.Getenv("REDIS_ADDR")
-	if envRedis == "" {
-		envRedis = "localhost:6379"
-	}
-	if err := config.InitRedis(envRedis); err != nil {
+	if err := config.InitRedis(); err != nil {
 		log.Fatalf("failed to connect to Redis: %v", err)
 	}
 
