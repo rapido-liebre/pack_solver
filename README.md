@@ -131,3 +131,25 @@ make swag
 | `make swag`         | Generates Swagger documentation (`/docs`)         |
 | `make docker-up`    | Builds and starts the app with Redis via Docker   |
 | `make docker-down`  | Stops and removes Docker containers               |
+
+---
+
+## 🚀 Deployment
+
+### 🧠 Backend (Railway)
+
+1. Log in at [https://railway.app](https://railway.app)
+2. Create a new project and link your GitHub repository
+3. Railway will auto-detect the Dockerfile and build the service
+4. Add environment variable:
+   ```
+   REDIS_ADDR = redis:6379
+   ```
+5. Redis service is provisioned automatically (defined in `railway.toml`)
+6. Access your backend via Railway's generated domain
+
+### 🌐 Frontend (Netlify or GitHub Pages)
+
+1. Copy the contents of `/ui` into a separate repository (e.g. `pack-solver-ui`)
+2. Deploy it as a static site using Netlify or GitHub Pages
+3. If needed, configure CORS in the backend to allow requests from the frontend origin
