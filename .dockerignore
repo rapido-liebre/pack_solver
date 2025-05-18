@@ -1,0 +1,24 @@
+# Go build artifacts
+/bin
+/build
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Output
+server
+
+# VCS
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# Testing
+*.test
+*.out
+coverage.*
