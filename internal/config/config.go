@@ -10,7 +10,7 @@ import (
 var redisClient *redis.Client
 var ctx = context.Background()
 
-const packSizesKey = "pack:sizes"
+const PackSizesKey = "pack:sizes"
 
 // InitRedis initializes the Redis client with the given address.
 func InitRedis(addr string) error {
@@ -23,7 +23,7 @@ func InitRedis(addr string) error {
 
 // GetPackSizes retrieves the pack sizes from Redis.
 func GetPackSizes() ([]int, error) {
-	val, err := redisClient.Get(ctx, packSizesKey).Result()
+	val, err := redisClient.Get(ctx, PackSizesKey).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -40,5 +40,5 @@ func SetPackSizes(sizes []int) error {
 	if err != nil {
 		return err
 	}
-	return redisClient.Set(ctx, packSizesKey, data, 0).Err()
+	return redisClient.Set(ctx, PackSizesKey, data, 0).Err()
 }

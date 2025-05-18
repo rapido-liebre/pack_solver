@@ -104,6 +104,8 @@ swag init -g cmd/api/main.go --output docs
 
 Visit [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html) to interact with the API.
 
+⚠️ If you encounter build errors related to `LeftDelim` or `RightDelim` fields in `docs/docs.go`, manually remove these two fields from the `swag.Spec` struct. They are not supported in newer versions of `swaggo/swag`.
+
 ---
 
 ## Project Structure

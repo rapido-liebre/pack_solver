@@ -33,6 +33,7 @@ type OrderResponse struct {
 }
 
 // RegisterRoutes registers HTTP routes for managing pack size configuration and serving frontend UI.
+// It also exposes Swagger documentation and a health check endpoint.
 // - GET /: serve index.html as default
 // - GET /config/packs: returns the current pack size configuration
 // - POST /config/packs: updates the pack size configuration after validation
@@ -49,6 +50,10 @@ func RegisterRoutes(r *gin.Engine) {
 	r.POST("/order", createOrder)
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
 }
 
 // @Summary Get current pack size configuration
