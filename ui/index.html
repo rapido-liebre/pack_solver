@@ -1,77 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Packs Calculator</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pack Solver</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 2rem; }
-        input { width: 80px; margin: 0.5rem 0; padding: 0.3rem; }
-        button { padding: 0.5rem 1rem; margin-top: 1rem; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        table { margin-top: 1rem; border-collapse: collapse; }
-        th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: center; }
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h2 { margin-top: 40px; }
+        .row { display: flex; align-items: center; margin-bottom: 8px; }
+        .row input[type="number"] { margin-left: 8px; width: 100px; }
+        .controls { margin-bottom: 12px; }
+        button { margin-right: 8px; }
+        #results-table { margin-top: 16px; border-collapse: collapse; }
+        #results-table th, #results-table td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        .success { color: green; margin-top: 8px; }
+        .error { color: red; margin-top: 8px; }
+        .spinner { display: none; margin-left: 10px; }
+        input.invalid { border: 2px solid red; }
     </style>
 </head>
 <body>
-<h1>Order Packs Calculator</h1>
+<h1>Pack Solver</h1>
 
-<h3>Pack Sizes</h3>
-<form id="packForm">
-    <input type="number" class="packSize" placeholder="Size" required><br>
-    <input type="number" class="packSize" placeholder="Size"><br>
-    <input type="number" class="packSize" placeholder="Size"><br>
-    <button type="submit">Submit pack sizes change</button>
-</form>
+<h2>Pack Sizes Configuration</h2>
+<div id="pack-sizes"></div>
+<div class="controls">
+    <button onclick="addPackSize()">+</button>
+    <button onclick="removeSelectedPackSizes()">−</button>
+    <button onclick="submitPackSizes()">Submit pack sizes</button>
+    <button onclick="loadPackSizes()">Refresh</button>
+    <span class="spinner" id="config-spinner">Loading...</span>
+    <div id="config-message"></div>
+</div>
 
-<h3>Calculate packs for order</h3>
-<form id="orderForm">
-    Items: <input type="number" id="quantity" required>
-    <button type="submit">Calculate</button>
-</form>
-
-<table id="resultTable">
-    <thead>
-    <tr><th>Pack</th><th>Quantity</th></tr>
-    </thead>
-    <tbody></tbody>
-</table>
+<h2>Calculate Packs for Order</h2>
+<input type="number" id="order-quantity" placeholder="Enter quantity" />
+<button onclick="calculateOrder()">Calculate</button>
+<span class="spinner" id="order-spinner">Calculating...</span>
+<div id="order-message"></div>
+<table id="results-table"></table>
 
 <script>
-    const baseURL = "http://localhost:8080";
+    const packSizesContainer = document.getElementById("pack-sizes");
 
-    document.getElementById("packForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const sizes = Array.from(document.querySelectorAll(".packSize"))
-            .map(input => parseInt(input.value))
-            .filter(size => !isNaN(size) && size > 0);
+    function createPackSizeInput(value = "", checked = true) {
+        const row = document.createElement("div");
+        row.className = "row";
 
-        const res = await fetch(`${baseURL}/config/packs`, {
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = checked;
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.value = value;
+        input.addEventListener("input", validatePackInputs);
+
+        row.appendChild(checkbox);
+        row.appendChild(input);
+        packSizesContainer.appendChild(row);
+    }
+
+    function loadPackSizes() {
+        const spinner = document.getElementById("config-spinner");
+        const msg = document.getElementById("config-message");
+        spinner.style.display = "inline";
+        msg.innerHTML = "";
+
+        fetch("/config/packs")
+            .then((res) => res.json())
+            .then((data) => {
+                packSizesContainer.innerHTML = "";
+                (data.pack_sizes || []).forEach(size => createPackSizeInput(size));
+            })
+            .catch(() => {
+                msg.innerHTML = "<div class='error'>Failed to load pack sizes</div>";
+            })
+            .finally(() => spinner.style.display = "none");
+    }
+
+    function addPackSize() {
+        createPackSizeInput();
+    }
+
+    function removeSelectedPackSizes() {
+        const rows = Array.from(packSizesContainer.children);
+        rows.forEach(row => {
+            const [checkbox] = row.getElementsByTagName("input");
+            if (checkbox.checked) packSizesContainer.removeChild(row);
+        });
+        validatePackInputs();
+    }
+
+    function submitPackSizes() {
+        const rows = Array.from(packSizesContainer.children);
+        const sizes = [];
+        const seen = new Set();
+        let hasError = false;
+        let errorMsg = "";
+
+        rows.forEach(row => {
+            const [checkbox, input] = row.getElementsByTagName("input");
+            const val = parseInt(input.value, 10);
+            if (checkbox.checked && !isNaN(val) && val > 0) {
+                if (seen.has(val)) {
+                    hasError = true;
+                    errorMsg = `Duplicate pack size: ${val}`;
+                } else {
+                    seen.add(val);
+                    sizes.push(val);
+                }
+            }
+        });
+
+        if (hasError || sizes.length === 0) {
+            document.getElementById("config-message").innerHTML =
+                `<div class='error'>${hasError ? errorMsg : "No valid sizes selected"}</div>`;
+            return;
+        }
+
+        const spinner = document.getElementById("config-spinner");
+        spinner.style.display = "inline";
+
+        fetch("/config/packs", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pack_sizes: sizes })
-        });
+            body: JSON.stringify({ pack_sizes: sizes }),
+        })
+            .then(res => res.json())
+            .then(() => {
+                document.getElementById("config-message").innerHTML =
+                    "<div class='success'>Pack sizes updated</div>";
+            })
+            .catch(() => {
+                document.getElementById("config-message").innerHTML =
+                    "<div class='error'>Failed to update</div>";
+            })
+            .finally(() => spinner.style.display = "none");
+    }
 
-        if (res.ok) alert("Pack sizes updated!");
-        else alert("Failed to update pack sizes.");
-    });
+    function calculateOrder() {
+        const quantity = parseInt(document.getElementById("order-quantity").value, 10);
+        if (isNaN(quantity) || quantity <= 0) {
+            document.getElementById("order-message").innerHTML =
+                "<div class='error'>Invalid quantity</div>";
+            return;
+        }
+        document.getElementById("order-message").innerHTML = "";
+        document.getElementById("results-table").innerHTML = "";
+        const spinner = document.getElementById("order-spinner");
+        spinner.style.display = "inline";
 
-    document.getElementById("orderForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const qty = parseInt(document.getElementById("quantity").value);
-        const res = await fetch(`${baseURL}/order`, {
+        fetch("/order", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ quantity: qty })
-        });
+            body: JSON.stringify({ quantity }),
+        })
+            .then(res => res.json())
+            .then(data => {
+                const table = document.getElementById("results-table");
+                table.innerHTML = "";
+                const header = table.insertRow();
+                header.innerHTML = "<th>Pack Size</th><th>Quantity</th>";
+                data.packs.forEach(pack => {
+                    const row = table.insertRow();
+                    row.insertCell().textContent = pack.size;
+                    row.insertCell().textContent = pack.count;
+                });
+            })
+            .catch(() => {
+                document.getElementById("order-message").innerHTML =
+                    "<div class='error'>Failed to calculate</div>";
+            })
+            .finally(() => spinner.style.display = "none");
+    }
 
-        const data = await res.json();
-        const tbody = document.querySelector("#resultTable tbody");
-        tbody.innerHTML = "";
-        data.packs.forEach(p => {
-            const row = `<tr><td>${p.size}</td><td>${p.count}</td></tr>`;
-            tbody.innerHTML += row;
+    function validatePackInputs() {
+        const rows = Array.from(packSizesContainer.children);
+        const seen = new Set();
+
+        rows.forEach(row => {
+            const [checkbox, input] = row.getElementsByTagName("input");
+            const val = parseInt(input.value, 10);
+            const isValid = checkbox.checked && !isNaN(val) && val > 0 && !seen.has(val);
+
+            if (isValid) {
+                input.classList.remove("invalid");
+                seen.add(val);
+            } else if (checkbox.checked && input.value !== "") {
+                input.classList.add("invalid");
+            } else {
+                input.classList.remove("invalid");
+            }
         });
-    });
+    }
+
+    window.onload = loadPackSizes;
 </script>
 </body>
 </html>
