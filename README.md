@@ -1,127 +1,133 @@
-# Pack Solver
+# 📦 Pack Solver
 
-This is a Go backend service that allows configuration of available pack sizes and calculates the optimal set of packs to fulfill an order quantity.
-
-## Features
-- Configure allowed pack sizes (e.g., 250, 500, 1000)
-- Calculate pack distribution for a requested quantity
-- REST API built with Gin
-- Redis for storing configuration
-- Swagger UI available at `/swagger/index.html`
-
-## Requirements
-- Go 1.24+
-- Docker (optional for local setup)
-
-## Run locally
-
-### 1. Run with Docker Compose
-```bash
-docker-compose up --build
-```
-
-### 2. Run manually
-```bash
-export REDIS_ADDR=localhost:6379
-redis-server &
-go run ./cmd/api
-```
-
-## API
-
-### GET /config/packs
-Returns current pack sizes.
-
-**Response:**
-```json
-{
-  "pack_sizes": [250, 500, 1000]
-}
-```
+A Go-based backend service for calculating optimal pack combinations for a given order quantity.  
+It also supports runtime configuration of available pack sizes and provides a built-in UI and Swagger documentation.
 
 ---
 
-### POST /config/packs
-Sets allowed pack sizes.
+## 🚀 Features
 
-**Request:**
-```json
-{
-  "pack_sizes": [250, 500, 1000, 5000]
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "pack_sizes": [250, 500, 1000, 5000]
-}
-```
+- Calculate pack distributions for any quantity
+- Runtime configuration of pack sizes (no code change)
+- Simple HTML UI and Swagger for testing
+- Redis-based persistent storage
+- Dockerized with `docker-compose`
+- Fully testable (unit + integration)
 
 ---
 
-### POST /order
-Returns pack combination to match quantity.
+## 📦 Endpoints
 
-**Request:**
+### `POST /order`
+Calculate optimal pack sizes for a given quantity.
+
+Request:
 ```json
-{
-  "quantity": 12001
-}
+{ "quantity": 2300 }
 ```
 
-**Response:**
+Response:
 ```json
 {
   "packs": [
-    { "size": 5000, "count": 2 },
-    { "size": 2000, "count": 1 },
-    { "size": 250, "count": 1 }
+    { "size": 1000, "count": 2 },
+    { "size": 250, "count": 1 },
+    { "size": 100, "count": 1 }
   ],
-  "total_items": 12000
+  "total_items": 2350
 }
 ```
 
 ---
 
-### GET /health
+### `GET /config/packs`
+Returns the current list of configured pack sizes.
+
+### `POST /config/packs`
+Updates the pack size configuration.
+
+Request:
+```json
+{ "pack_sizes": [100, 250, 500, 1000] }
+```
+
+---
+
+### `GET /health`
 Simple health check endpoint.
 
-**Response:**
-```json
-{ "status": "ok" }
-```
+---
+
+### `GET /swagger/index.html`
+Swagger UI for testing the API interactively.
 
 ---
 
-## Swagger Documentation
-To generate/update Swagger docs:
+## 🔧 Local development
+
+### Requirements:
+- Go 1.24.3+
+- Redis
+
+### Run locally:
 
 ```bash
-swag init -g cmd/api/main.go --output docs
+make run
 ```
 
-Visit [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html) to interact with the API.
+Swagger: [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)
 
-⚠️ If you encounter build errors related to `LeftDelim` or `RightDelim` fields in `docs/docs.go`, manually remove these two fields from the `swag.Spec` struct. They are not supported in newer versions of `swaggo/swag`.
+Frontend UI: [http://localhost:8080/](http://localhost:8080/)
 
 ---
 
-## Project Structure
-- `cmd/api` - entrypoint
-- `internal/http` - route handlers
-- `internal/packsolver` - pack solving logic
-- `internal/config` - Redis integration
-- `internal/packsolver/solver_test.go` - unit tests
-- `docs/` - Swagger docs
+## 🧪 Run tests
 
-## Tests
 ```bash
-go test ./...
+make test
 ```
 
 ---
 
-## License
-MIT
+## 🐳 Docker
+
+### Run using Docker Compose:
+
+```bash
+make docker-up
+```
+
+Stop containers:
+
+```bash
+make docker-down
+```
+
+---
+
+## 📚 Generate Swagger Docs
+
+Make sure you have [swag](https://github.com/swaggo/swag) installed:
+
+```bash
+go install github.com/swaggo/swag/cmd/swag@latest
+```
+
+Then run:
+
+```bash
+make swag
+```
+
+> 💡 If you encounter a build error with `docs.go` mentioning `LeftDelim` or `RightDelim`, manually remove those fields from the `SwaggerInfo` struct in `docs/docs.go`.
+
+---
+
+| Command             | Description                                       |
+|---------------------|---------------------------------------------------|
+| `make build`        | Builds the Go binary to `./server`                |
+| `make run`          | Runs the application locally (`go run`)           |
+| `make test`         | Runs all unit and integration tests               |
+| `make swag`         | Generates Swagger documentation (`/docs`)         |
+| `make docker-up`    | Builds and starts the app with Redis via Docker   |
+| `make docker-down`  | Stops and removes Docker containers               |
