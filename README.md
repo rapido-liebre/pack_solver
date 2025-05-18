@@ -7,6 +7,7 @@ This is a Go backend service that allows configuration of available pack sizes a
 - Calculate pack distribution for a requested quantity
 - REST API built with Gin
 - Redis for storing configuration
+- Swagger UI available at `/swagger/index.html`
 
 ## Requirements
 - Go 1.24+
@@ -82,12 +83,36 @@ Returns pack combination to match quantity.
 }
 ```
 
+---
+
+### GET /health
+Simple health check endpoint.
+
+**Response:**
+```json
+{ "status": "ok" }
+```
+
+---
+
+## Swagger Documentation
+To generate/update Swagger docs:
+
+```bash
+swag init -g cmd/api/main.go --output docs
+```
+
+Visit [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html) to interact with the API.
+
+---
+
 ## Project Structure
 - `cmd/api` - entrypoint
 - `internal/http` - route handlers
 - `internal/packsolver` - pack solving logic
 - `internal/config` - Redis integration
 - `internal/packsolver/solver_test.go` - unit tests
+- `docs/` - Swagger docs
 
 ## Tests
 ```bash

@@ -1,0 +1,139 @@
+definitions:
+  http.OrderRequest:
+    properties:
+      quantity:
+        type: integer
+    required:
+    - quantity
+    type: object
+  http.OrderResponse:
+    properties:
+      packs:
+        items:
+          $ref: '#/definitions/packsolver.Pack'
+        type: array
+      total_items:
+        type: integer
+    type: object
+  http.PackConfigRequest:
+    properties:
+      pack_sizes:
+        items:
+          type: integer
+        type: array
+    required:
+    - pack_sizes
+    type: object
+  http.PackConfigResponse:
+    properties:
+      pack_sizes:
+        items:
+          type: integer
+        type: array
+      success:
+        type: boolean
+    type: object
+  packsolver.Pack:
+    properties:
+      count:
+        type: integer
+      size:
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /config/packs:
+    get:
+      consumes:
+      - application/json
+      description: Returns the list of configured pack sizes fetched from Redis
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                type: integer
+              type: array
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get current pack size configuration
+      tags:
+      - config
+    post:
+      consumes:
+      - application/json
+      description: Set a new list of pack sizes (must be unique and > 0). It ensures
+        all pack sizes are positive integers, removes duplicates,
+      parameters:
+      - description: Pack sizes
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.PackConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.PackConfigResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update pack size configuration
+      tags:
+      - config
+  /order:
+    post:
+      consumes:
+      - application/json
+      description: Calculates the optimal pack combination for the requested quantity
+      parameters:
+      - description: Order quantity
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.OrderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.OrderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Calculate pack distribution
+      tags:
+      - order
+swagger: "2.0"

@@ -8,6 +8,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rapido-liebre/pack_solver/internal/config"
+
+	_ "github.com/rapido-liebre/pack_solver/docs"
+	"github.com/swaggo/files"
+	"github.com/swaggo/gin-swagger"
 )
 
 type PackConfigRequest struct {
@@ -28,18 +32,33 @@ type OrderResponse struct {
 	TotalItems int               `json:"total_items"`
 }
 
-// RegisterRoutes registers HTTP routes for managing pack size configuration:
+// RegisterRoutes registers HTTP routes for managing pack size configuration and serving frontend UI.
+// - GET /: serve index.html as default
 // - GET /config/packs: returns the current pack size configuration
 // - POST /config/packs: updates the pack size configuration after validation
 // - POST /order: returns the optimal pack distribution for the requested quantity
 func RegisterRoutes(r *gin.Engine) {
+	// Serve UI from /ui directory
+	r.Static("/static", "./ui")
+	r.GET("/", func(c *gin.Context) {
+		c.File("./ui/index.html")
+	})
+
 	r.GET("/config/packs", getPackSizes)
 	r.POST("/config/packs", setPackSizes)
 	r.POST("/order", createOrder)
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
-// getPackSizes returns the current pack size configuration fetched from Redis.
-// It responds with a JSON object containing the list of pack sizes.
+// @Summary Get current pack size configuration
+// @Description Returns the list of configured pack sizes fetched from Redis
+// @Tags config
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string][]int
+// @Failure 500 {object} map[string]string
+// @Router /config/packs [get]
 func getPackSizes(c *gin.Context) {
 	sizes, err := config.GetPackSizes()
 	if err != nil {
@@ -49,9 +68,17 @@ func getPackSizes(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pack_sizes": sizes})
 }
 
-// setPackSizes sets a new pack size configuration after validation.
-// It ensures all pack sizes are positive integers, removes duplicates,
-// and sorts the list for consistency and solver optimization.
+// @Summary Update pack size configuration
+// @Description Set a new list of pack sizes (must be unique and > 0). It ensures all pack sizes are positive integers, removes duplicates,
+// and sorts the list for consistency and solver optimization
+// @Tags config
+// @Accept json
+// @Produce json
+// @Param request body PackConfigRequest true "Pack sizes"
+// @Success 200 {object} PackConfigResponse
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /config/packs [post]
 func setPackSizes(c *gin.Context) {
 	var req PackConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil || len(req.PackSizes) == 0 {
@@ -89,7 +116,16 @@ func setPackSizes(c *gin.Context) {
 	c.JSON(http.StatusOK, PackConfigResponse{Success: true, PackSizes: clean})
 }
 
-// createOrder processes a request for an order and returns the optimal pack distribution.
+// @Summary Calculate pack distribution
+// @Description Calculates the optimal pack combination for the requested quantity
+// @Tags order
+// @Accept json
+// @Produce json
+// @Param request body OrderRequest true "Order quantity"
+// @Success 200 {object} OrderResponse
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /order [post]
 func createOrder(c *gin.Context) {
 	var req OrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Quantity <= 0 {
