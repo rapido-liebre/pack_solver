@@ -1,9 +1,6 @@
 [project]
 name = "pack-solver"
 
-[build]
-builder = "Docker"
-
 [env]
 REDIS_ADDR = "redis:6379"
 
