@@ -32,6 +32,15 @@ type OrderResponse struct {
 	TotalItems int                     `json:"total_items"`
 }
 
+// SetupRouter initializes the Gin engine with all registered routes.
+// Used by main() and tests to start the API server.
+func SetupRouter() *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	r := gin.Default()
+	RegisterRoutes(r)
+	return r
+}
+
 // RegisterRoutes registers HTTP routes for managing pack size configuration and serving frontend UI.
 // It also exposes Swagger documentation and a health check endpoint.
 // - GET /: serve index.html as default

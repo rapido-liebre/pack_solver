@@ -4,7 +4,6 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"github.com/rapido-liebre/pack_solver/internal/config"
 	"net/http"
 	"os"
@@ -27,13 +26,6 @@ type orderResponse struct {
 	TotalItems int `json:"total_items"`
 }
 
-func setupRouter() *gin.Engine {
-	gin.SetMode(gin.TestMode)
-	r := gin.Default()
-	httpapi.RegisterRoutes(r)
-	return r
-}
-
 func TestOrderEndpointE2E(t *testing.T) {
 	// Setup environment variables
 	_ = os.Setenv("REDIS_ADDR", "localhost:6379")
@@ -49,7 +41,7 @@ func TestOrderEndpointE2E(t *testing.T) {
 
 	// Start backend server in goroutine
 	go func() {
-		r := setupRouter()
+		r := httpapi.SetupRouter()
 		_ = r.Run(":8080")
 	}()
 	// Wait for server to start

@@ -7,20 +7,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-	routes "github.com/rapido-liebre/pack_solver/internal/http"
+	httpapi "github.com/rapido-liebre/pack_solver/internal/http"
 	"github.com/stretchr/testify/assert"
 )
 
-func setupRouter() *gin.Engine {
-	gin.SetMode(gin.TestMode)
-	r := gin.Default()
-	routes.RegisterRoutes(r)
-	return r
-}
-
 func TestHealthEndpoint(t *testing.T) {
-	r := setupRouter()
+	r := httpapi.SetupRouter()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/health", nil)
 	r.ServeHTTP(w, req)
@@ -29,7 +21,7 @@ func TestHealthEndpoint(t *testing.T) {
 }
 
 func TestOrderEndpointInvalidInput(t *testing.T) {
-	r := setupRouter()
+	r := httpapi.SetupRouter()
 	w := httptest.NewRecorder()
 	body := []byte(`{"quantity": -5}`)
 	req, _ := http.NewRequest("POST", "/order", bytes.NewBuffer(body))
@@ -39,7 +31,7 @@ func TestOrderEndpointInvalidInput(t *testing.T) {
 }
 
 func TestConfigPacksInvalidPayload(t *testing.T) {
-	r := setupRouter()
+	r := httpapi.SetupRouter()
 	w := httptest.NewRecorder()
 	body := []byte(`{"pack_sizes": [0, -1, 1000]}`)
 	req, _ := http.NewRequest("POST", "/config/packs", bytes.NewBuffer(body))
@@ -49,7 +41,7 @@ func TestConfigPacksInvalidPayload(t *testing.T) {
 }
 
 func TestConfigPacksMissingField(t *testing.T) {
-	r := setupRouter()
+	r := httpapi.SetupRouter()
 	w := httptest.NewRecorder()
 	body := []byte(`{}`)
 	req, _ := http.NewRequest("POST", "/config/packs", bytes.NewBuffer(body))
