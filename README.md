@@ -167,7 +167,7 @@ make swag
 3. Railway will auto-detect the Dockerfile and build the service
 4. Add environment variable:
    ```
-   REDIS_ADDR = redis:6379
+   REDIS_ADDR = ${{Redis.REDIS_URL}}
    ```
 5. Redis service is provisioned automatically (defined in `railway.toml`)
 6. Access your backend via Railway's generated domain
