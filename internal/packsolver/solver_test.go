@@ -2,6 +2,7 @@
 package packsolver_test
 
 import (
+	"fmt"
 	"github.com/rapido-liebre/pack_solver/internal/packsolver"
 	"testing"
 
@@ -56,4 +57,51 @@ func TestSolvePackDistribution(t *testing.T) {
 		sum += p.Size * p.Count
 	}
 	assert.Equal(t, total, sum)
+}
+
+func TestVeryLargeQuantity(t *testing.T) {
+	sizes := []int{23, 31, 53}
+	quantity := 500000
+
+	packs, total := packsolver.SolveSmart(quantity, sizes)
+
+	assert.NotEmpty(t, packs)
+	assert.GreaterOrEqual(t, total, quantity)
+
+	sum := 0
+	for _, p := range packs {
+		sum += p.Size * p.Count
+	}
+	assert.Equal(t, total, sum)
+}
+
+func TestCompareAllStrategies(t *testing.T) {
+	sizes := []int{23, 31, 53}
+	quantity := 500000
+
+	smartPacks, smartTotal := packsolver.SolveSmart(quantity, sizes)
+	dpPacks, dpTotal := packsolver.SolvePackDistribution(quantity, sizes)
+	greedyPacks, greedyTotal := packsolver.SolveGreedy(quantity, sizes)
+
+	fmt.Println("=== Smart Strategy ===")
+	for _, p := range smartPacks {
+		fmt.Printf("Pack %d: %d pcs\n", p.Size, p.Count)
+	}
+	fmt.Printf("Total: %d\n\n", smartTotal)
+
+	fmt.Println("=== Dynamic Programming ===")
+	for _, p := range dpPacks {
+		fmt.Printf("Pack %d: %d pcs\n", p.Size, p.Count)
+	}
+	fmt.Printf("Total: %d\n\n", dpTotal)
+
+	fmt.Println("=== Greedy Strategy ===")
+	for _, p := range greedyPacks {
+		fmt.Printf("Pack %d: %d pcs\n", p.Size, p.Count)
+	}
+	fmt.Printf("Total: %d\n", greedyTotal)
+
+	assert.GreaterOrEqual(t, smartTotal, quantity)
+	assert.GreaterOrEqual(t, dpTotal, quantity)
+	assert.GreaterOrEqual(t, greedyTotal, quantity)
 }

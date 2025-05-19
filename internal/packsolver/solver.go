@@ -1,12 +1,130 @@
 package packsolver
 
+import (
+	"math"
+	"sort"
+)
+
 // PackResult represents one pack size and the number of times it's used.
 type PackResult struct {
 	Size  int `json:"size"`  // size of the pack
 	Count int `json:"count"` // how many times this pack is used
 }
 
-// SolvePackDistribution attempts to find the combination of pack sizes that
+// SolveSmart runs greedy and DP and picks the better result based on minimal total.
+func SolveSmart(quantity int, sizes []int) ([]PackResult, int) {
+	greedy, gTotal := SolveGreedy(quantity, sizes)
+	dp, dTotal := SolvePackDistribution(quantity, sizes)
+
+	if dTotal <= gTotal {
+		return dp, dTotal
+	}
+	return greedy, gTotal
+}
+
+// SolvePackDistribution uses dynamic programming to find the minimal total quantity of packs
+// whose sum is equal or greater than the requested quantity.
+func SolvePackDistribution(quantity int, sizes []int) ([]PackResult, int) {
+	if len(sizes) == 0 || quantity <= 0 {
+		return []PackResult{}, 0
+	}
+
+	// Find the largest pack size to set DP search limit
+	maxSize := 0
+	for _, s := range sizes {
+		if s > maxSize {
+			maxSize = s
+		}
+	}
+
+	limit := quantity + maxSize         // allow room for small overage
+	dp := make([]int, limit+1)          // dp[i] = min total for i
+	packCount := make([][]int, limit+1) // packCount[i] = how many of each size for dp[i]
+
+	for i := 1; i <= limit; i++ {
+		dp[i] = math.MaxInt32
+	}
+	dp[0] = 0
+	packCount[0] = make([]int, len(sizes))
+
+	for i := 1; i <= limit; i++ {
+		for j, size := range sizes {
+			if i >= size && dp[i-size] != math.MaxInt32 {
+				if dp[i] > dp[i-size]+size {
+					dp[i] = dp[i-size] + size
+					packCount[i] = append([]int(nil), packCount[i-size]...)
+					packCount[i][j]++
+				}
+			}
+		}
+	}
+
+	// Find first valid solution >= quantity
+	bestTotal := -1
+	for i := quantity; i <= limit; i++ {
+		if dp[i] != math.MaxInt32 {
+			bestTotal = i
+			break
+		}
+	}
+	if bestTotal == -1 {
+		return []PackResult{}, 0
+	}
+
+	var result []PackResult
+	for i, count := range packCount[bestTotal] {
+		if count > 0 {
+			result = append(result, PackResult{
+				Size:  sizes[i],
+				Count: count,
+			})
+		}
+	}
+
+	return result, bestTotal
+}
+
+// SolveGreedy prefers large packs first, then adjusts to match the quantity.
+func SolveGreedy(quantity int, sizes []int) ([]PackResult, int) {
+	sort.Sort(sort.Reverse(sort.IntSlice(sizes)))
+	remaining := quantity
+	packMap := make(map[int]int)
+
+	for _, size := range sizes {
+		count := remaining / size
+		packMap[size] = count
+		remaining -= count * size
+	}
+
+	// Try to cover any leftover amount using smallest possible packs
+	for remaining > 0 {
+		for _, size := range sizes {
+			if size >= remaining {
+				packMap[size]++
+				remaining -= size
+				break
+			}
+		}
+		// If nothing fits, break
+		if remaining > 0 && packMap[sizes[len(sizes)-1]] == 0 {
+			break
+		}
+	}
+
+	total := 0
+	results := []PackResult{}
+	for _, size := range sizes {
+		count := packMap[size]
+		if count > 0 {
+			results = append(results, PackResult{Size: size, Count: count})
+			total += size * count
+		}
+	}
+
+	return results, total
+}
+
+// SolvePackDistribution2 attempts to find the combination of pack sizes that
 // covers the given quantity with the least total number of items.
 //
 // Parameters:
@@ -21,7 +139,7 @@ type PackResult struct {
 // - uses a depth-first search (DFS) to try all combinations
 // - explores combinations recursively
 // - minimizes total packed items (not number of packs)
-func SolvePackDistribution(quantity int, sizes []int) ([]PackResult, int) {
+func SolvePackDistribution2(quantity int, sizes []int) ([]PackResult, int) {
 	var best []PackResult          // best combination found so far
 	minTotal := int(^uint(0) >> 1) // set to MaxInt
 

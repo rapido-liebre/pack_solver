@@ -153,7 +153,7 @@ func createOrder(c *gin.Context) {
 		return
 	}
 
-	packs, total := packsolver.SolvePackDistribution(req.Quantity, sizes)
+	packs, total := packsolver.SolveSmart(req.Quantity, sizes)
 	c.JSON(http.StatusOK, OrderResponse{
 		Packs:      packs,
 		TotalItems: total,

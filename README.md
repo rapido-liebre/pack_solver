@@ -16,7 +16,7 @@ It also supports runtime configuration of available pack sizes and provides a bu
 
 ---
 
-## 📦 Endpoints
+## 📦 API Endpoints
 
 ### `POST /order`
 Calculate optimal pack sizes for a given quantity.
@@ -70,6 +70,17 @@ You can try the app live:
 - 🔧 Backend UI: [https://packsolver.up.railway.app/swagger/index.html](https://packsolver.up.railway.app/swagger/index.html)
 - 🖥️ Web UI: [https://packsolver.up.railway.app/](https://packsolver.up.railway.app/)
 
+
+### Algorithms Used
+
+The backend offers **three algorithms** for solving the pack distribution problem:
+
+1. **Greedy (SolveGreedy)** – chooses the largest possible packs first and fills the remainder. Fast but not always optimal.
+2. **Dynamic Programming (SolvePackDistribution)** – computes minimal excess above required amount. Optimal but slower for very large input.
+3. **Smart Strategy (SolveSmart)** – runs both Greedy and DP and picks the better result based on the lowest total amount.
+
+The `/order` endpoint uses the Smart strategy by default.
+
 ---
 
 ## 🔧 Local development
@@ -107,8 +118,14 @@ The project uses `github.com/joho/godotenv` to load variables automatically.
 
 ## 🧪 Run tests
 
+Unit and integration tests:
+
 ```bash
 make test
+```
+E2E test (requires local server running on port 8080 and Redis):
+```bash
+go test tests/e2e_test.go
 ```
 
 ---
