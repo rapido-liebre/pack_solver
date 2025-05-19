@@ -1,53 +1,74 @@
 package packsolver
 
-import (
-	"sort"
-)
-
-type Pack struct {
-	Size  int `json:"size"`
-	Count int `json:"count"`
+// PackResult represents one pack size and the number of times it's used.
+type PackResult struct {
+	Size  int // size of the pack
+	Count int // how many times this pack is used
 }
 
-// SolvePackDistribution calculates the optimal combination of packs to fulfill the order quantity.
-// It returns the list of pack sizes with their respective counts and the total quantity packed (which may include excess).
-func SolvePackDistribution(quantity int, packSizes []int) ([]Pack, int) {
-	// prioritize larger packs
-	sort.Sort(sort.Reverse(sort.IntSlice(packSizes)))
+// SolvePackDistribution attempts to find the combination of pack sizes that
+// covers the given quantity with the least total number of items.
+//
+// Parameters:
+// - quantity: number of items to be packed
+// - sizes: available pack sizes (must be positive integers)
+//
+// Returns:
+// - slice of PackResult (each containing Size and Count)
+// - total number of packed items (which may be slightly more than quantity)
+//
+// Strategy:
+// - uses a depth-first search (DFS) to try all combinations
+// - explores combinations recursively
+// - minimizes total packed items (not number of packs)
+func SolvePackDistribution(quantity int, sizes []int) ([]PackResult, int) {
+	var best []PackResult          // best combination found so far
+	minTotal := int(^uint(0) >> 1) // set to MaxInt
 
-	bestTotal := 0
-	var bestCombo []Pack
-
-	var dfs func(int, []Pack, int)
-	dfs = func(remaining int, current []Pack, total int) {
-		if total >= quantity && (bestTotal == 0 || total < bestTotal || (total == bestTotal && len(current) < len(bestCombo))) {
-			bestTotal = total
-			bestCombo = append([]Pack{}, current...)
+	// recurse is a recursive DFS function to explore combinations
+	var recurse func(index, remaining, currentTotal int, current []PackResult)
+	recurse = func(index, remaining, currentTotal int, current []PackResult) {
+		// Base case: if remaining is <= 0, we found a valid or overfilled combo
+		if remaining <= 0 {
+			if currentTotal < minTotal {
+				minTotal = currentTotal
+				best = make([]PackResult, len(current))
+				copy(best, current)
+			}
 			return
 		}
-		if total >= quantity || len(current) > len(packSizes)*2 {
+
+		// If we’ve used all pack sizes and still not satisfied quantity
+		if index == len(sizes) {
 			return
 		}
-		for _, size := range packSizes {
-			dfs(remaining-size, append(current, Pack{Size: size, Count: 1}), total+size)
+
+		packSize := sizes[index]
+
+		// maxCount = how many times we can use this packSize without going too far
+		maxCount := (remaining + packSize - 1) / packSize // ceil division
+
+		// Try using this pack size from 0 up to maxCount times
+		for count := 0; count <= maxCount; count++ {
+			// Create a fresh copy of the current path (to preserve state)
+			next := append([]PackResult{}, current...)
+
+			// Only append if we’re actually using this pack size
+			if count > 0 {
+				next = append(next, PackResult{Size: packSize, Count: count})
+			}
+
+			// Recurse to the next pack size
+			recurse(index+1, remaining-count*packSize, currentTotal+count*packSize, next)
 		}
 	}
 
-	dfs(quantity, []Pack{}, 0)
+	// Start DFS from index 0
+	recurse(0, quantity, 0, []PackResult{})
 
-	// collapse duplicates (e.g., 250,250,250 -> 3x250)
-	countMap := make(map[int]int)
-	for _, p := range bestCombo {
-		countMap[p.Size]++
-	}
-	result := make([]Pack, 0, len(countMap))
-	for size, count := range countMap {
-		result = append(result, Pack{Size: size, Count: count})
+	if best == nil {
+		return []PackResult{}, 0
 	}
 
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Size > result[j].Size
-	})
-
-	return result, bestTotal
+	return best, minTotal
 }

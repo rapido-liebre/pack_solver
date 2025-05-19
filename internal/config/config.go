@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"os"
+	"strings"
 )
 
 var redisClient *redis.Client
@@ -17,14 +18,21 @@ const PackSizesKey = "pack:sizes"
 // InitRedis initializes Redis connection using REDIS_ADDR from environment.
 // It expects REDIS_ADDR in URI format (e.g., redis://user:pass@host:6379).
 func InitRedis() error {
-	url := os.Getenv("REDIS_ADDR")
-	if url == "" {
+	addr := os.Getenv("REDIS_ADDR")
+	if addr == "" {
 		return fmt.Errorf("REDIS_ADDR is not set")
 	}
 
-	opt, err := redis.ParseURL(url)
-	if err != nil {
-		return fmt.Errorf("invalid REDIS_ADDR format: %w", err)
+	var opt *redis.Options
+	var err error
+
+	if strings.HasPrefix(addr, "redis://") {
+		opt, err = redis.ParseURL(addr)
+		if err != nil {
+			return fmt.Errorf("invalid REDIS_ADDR format: %w", err)
+		}
+	} else {
+		opt = &redis.Options{Addr: addr}
 	}
 
 	redisClient = redis.NewClient(opt)

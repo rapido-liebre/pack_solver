@@ -28,8 +28,8 @@ type OrderRequest struct {
 }
 
 type OrderResponse struct {
-	Packs      []packsolver.Pack `json:"packs"`
-	TotalItems int               `json:"total_items"`
+	Packs      []packsolver.PackResult `json:"packs"`
+	TotalItems int                     `json:"total_items"`
 }
 
 // RegisterRoutes registers HTTP routes for managing pack size configuration and serving frontend UI.

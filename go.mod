@@ -5,6 +5,7 @@ go 1.24.3
 require (
 	github.com/alicebob/miniredis/v2 v2.34.0
 	github.com/gin-gonic/gin v1.10.0
+	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.8.0
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/files v1.0.1

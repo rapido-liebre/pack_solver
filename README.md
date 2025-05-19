@@ -63,6 +63,15 @@ Swagger UI for testing the API interactively.
 
 ---
 
+## 🌍 Live Demo
+
+You can try the app live:
+
+- 🔧 Backend UI: [https://packsolver.up.railway.app/swagger/index.html](https://packsolver.up.railway.app/swagger/index.html)
+- 🖥️ Web UI: [https://packsolver.up.railway.app/](https://packsolver.up.railway.app/)
+
+---
+
 ## 🔧 Local development
 
 ### Requirements:
@@ -78,6 +87,21 @@ make run
 Swagger: [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)
 
 Frontend UI: [http://localhost:8080/](http://localhost:8080/)
+
+---
+
+## ⚙️ Environment configuration
+
+To run the project locally, create a `.env` file based on the `.env.sample` provided.
+
+Example `.env`:
+
+```
+REDIS_ADDR=localhost:6379
+PACK_SOLVER_API=http://localhost:8080
+```
+
+The project uses `github.com/joho/godotenv` to load variables automatically.
 
 ---
 
@@ -148,7 +172,7 @@ make swag
 5. Redis service is provisioned automatically (defined in `railway.toml`)
 6. Access your backend via Railway's generated domain
 
-### 🌐 Frontend (Netlify or GitHub Pages)
+### 🌐 Frontend (Optional: Netlify or GitHub Pages)
 
 1. Copy the contents of `/ui` into a separate repository (e.g. `pack-solver-ui`)
 2. Deploy it as a static site using Netlify or GitHub Pages

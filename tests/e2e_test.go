@@ -4,11 +4,14 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/gin-gonic/gin"
+	"github.com/rapido-liebre/pack_solver/internal/config"
 	"net/http"
 	"os"
 	"testing"
 	"time"
 
+	httpapi "github.com/rapido-liebre/pack_solver/internal/http"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,33 +19,50 @@ type orderRequest struct {
 	Quantity int `json:"quantity"`
 }
 
-type pack struct {
-	Size  int `json:"size"`
-	Count int `json:"count"`
+type orderResponse struct {
+	Packs []struct {
+		Size  int `json:"size"`
+		Count int `json:"count"`
+	} `json:"packs"`
+	TotalItems int `json:"total_items"`
 }
 
-type orderResponse struct {
-	Packs      []pack `json:"packs"`
-	TotalItems int    `json:"total_items"`
+func setupRouter() *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	r := gin.Default()
+	httpapi.RegisterRoutes(r)
+	return r
 }
 
 func TestOrderEndpointE2E(t *testing.T) {
-	// Give backend time to start if needed
+	// Setup environment variables
+	_ = os.Setenv("REDIS_ADDR", "localhost:6379")
+	_ = os.Setenv("PACK_SOLVER_API", "http://localhost:8080")
+
+	// Initialize Redis
+	err := config.InitRedis()
+	assert.NoError(t, err)
+
+	// Set sample pack sizes in Redis for test to succeed
+	err = config.SetPackSizes([]int{100, 250, 500, 1000})
+	assert.NoError(t, err)
+
+	// Start backend server in goroutine
+	go func() {
+		r := setupRouter()
+		_ = r.Run(":8080")
+	}()
+	// Wait for server to start
 	time.Sleep(1 * time.Second)
 
-	// Use env var or default to localhost
-	baseURL := os.Getenv("PACK_SOLVER_API")
-	if baseURL == "" {
-		baseURL = "http://localhost:8080"
-	}
-
+	// Prepare request
 	requestData := orderRequest{Quantity: 12001}
 	body, _ := json.Marshal(requestData)
+	baseURL := os.Getenv("PACK_SOLVER_API")
 
-	// Send real request to the endpoint /order
+	// Send request to /order
 	resp, err := http.Post(baseURL+"/order", "application/json", bytes.NewBuffer(body))
 	assert.NoError(t, err)
-	// Check response status 200
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	var result orderResponse

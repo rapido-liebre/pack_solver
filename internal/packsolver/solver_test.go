@@ -43,3 +43,17 @@ func TestLargeQuantity(t *testing.T) {
 	assert.GreaterOrEqual(t, total, 12345)
 	assert.NotEmpty(t, packs)
 }
+
+func TestSolvePackDistribution(t *testing.T) {
+	sizes := []int{100, 250, 500, 1000}
+	quantity := 12001
+	packs, total := packsolver.SolvePackDistribution(quantity, sizes)
+	assert.NotEmpty(t, packs)
+	assert.GreaterOrEqual(t, total, quantity)
+
+	sum := 0
+	for _, p := range packs {
+		sum += p.Size * p.Count
+	}
+	assert.Equal(t, total, sum)
+}
