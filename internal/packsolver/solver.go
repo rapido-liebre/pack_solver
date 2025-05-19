@@ -2,8 +2,8 @@ package packsolver
 
 // PackResult represents one pack size and the number of times it's used.
 type PackResult struct {
-	Size  int // size of the pack
-	Count int // how many times this pack is used
+	Size  int `json:"size"`  // size of the pack
+	Count int `json:"count"` // how many times this pack is used
 }
 
 // SolvePackDistribution attempts to find the combination of pack sizes that
